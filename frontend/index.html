@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RunPilot — Auto-generate Runbooks</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
+    .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 1rem 2rem; display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 20px; font-weight: 700; color: #58a6ff; }
+    .logo span { color: #3fb950; }
+    .tagline { font-size: 13px; color: #8b949e; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .hero { text-align: center; padding: 3rem 0 2rem; }
+    .hero h1 { font-size: 36px; font-weight: 700; margin-bottom: 0.5rem; }
+    .hero h1 span { color: #3fb950; }
+    .hero p { color: #8b949e; font-size: 16px; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; color: #e1e4e8; }
+    .input-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    input { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; color: #e1e4e8; font-size: 14px; flex: 1; min-width: 200px; outline: none; }
+    input:focus { border-color: #58a6ff; }
+    button { background: #238636; border: none; border-radius: 8px; padding: 10px 20px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    button:hover { background: #2ea043; }
+    button.secondary { background: #21262d; border: 1px solid #30363d; }
+    button.secondary:hover { background: #30363d; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 1rem; }
+    .ticket-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; cursor: pointer; transition: border-color 0.2s; }
+    .ticket-card:hover { border-color: #58a6ff; }
+    .ticket-card.selected { border-color: #3fb950; background: #0d2317; }
+    .ticket-key { font-size: 12px; color: #58a6ff; font-weight: 600; margin-bottom: 4px; }
+    .ticket-title { font-size: 14px; color: #e1e4e8; line-height: 1.4; margin-bottom: 8px; }
+    .ticket-status { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: #1a4731; color: #3fb950; font-weight: 600; }
+    .runbook-output { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; margin-top: 1rem; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.7; white-space: pre-wrap; max-height: 600px; overflow-y: auto; color: #e1e4e8; }
+    .loading { text-align: center; padding: 2rem; color: #8b949e; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+    .badge-blue { background: #1c3a5e; color: #58a6ff; }
+    .empty { color: #8b949e; font-size: 14px; padding: 1rem 0; }
+    .actions-row { display: flex; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
+    .runbook-title { font-size: 15px; font-weight: 600; color: #3fb950; margin-bottom: 0.5rem; }
+    .copy-btn { font-size: 12px; padding: 6px 12px; }
+    .status-bar { font-size: 12px; color: #8b949e; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Run<span>Pilot</span></div>
+  <div class="tagline">Auto-generate runbooks from Jira incidents</div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>Your runbooks <span>write themselves</span></h1>
+    <p>Connect to Jira, fetch incidents, generate production-ready runbooks instantly</p>
+  </div>
+
+  <div class="card">
+    <h2>1. Load your Jira tickets</h2>
+    <div class="input-row">
+      <input type="text" id="projectKey" placeholder="Jira project key (e.g. PROJ)" value="PROJ" />
+      <button onclick="loadTickets()">Fetch Tickets</button>
+    </div>
+    <div id="ticketsContainer" style="margin-top:1rem;">
+      <div class="empty">Enter your project key and click Fetch Tickets</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Generate Runbook</h2>
+    <div id="selectedTicket" class="empty">Select a ticket above to generate its runbook</div>
+    <div class="actions-row">
+      <button id="generateBtn" onclick="generateRunbook()" disabled>Generate Runbook</button>
+      <button class="secondary" onclick="generateAll()">Generate All Incident Runbooks</button>
+    </div>
+    <div id="statusBar" class="status-bar"></div>
+  </div>
+
+  <div class="card" id="outputCard" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2>Generated Runbook</h2>
+      <button class="secondary copy-btn" onclick="copyRunbook()">Copy</button>
+    </div>
+    <div id="runbookTitle" class="runbook-title"></div>
+    <div id="runbookOutput" class="runbook-output"></div>
+    <div style="margin-top:0.75rem; font-size:12px; color:#8b949e;" id="savedPath"></div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:8000'
+  let selectedTicket = null
+  let currentRunbook = ''
+
+  async function loadTickets() {
+    const key = document.getElementById('projectKey').value.trim()
+    if (!key) return
+    const container = document.getElementById('ticketsContainer')
+    container.innerHTML = '<div class="loading"><span class="spinner"></span>Fetching tickets from Jira...</div>'
+    try {
+      const res = await fetch(`${API}/tickets/${key}`)
+      const data = await res.json()
+      if (!data.tickets || data.tickets.length === 0) {
+        container.innerHTML = '<div class="empty">No tickets found for this project</div>'
+        return
+      }
+      container.innerHTML = `<div style="font-size:13px;color:#8b949e;margin-bottom:10px;">${data.count} tickets found — click one to select it</div>`
+      const grid = document.createElement('div')
+      grid.className = 'tickets-grid'
+      data.tickets.forEach(ticket => {
+        const card = document.createElement('div')
+        card.className = 'ticket-card'
+        card.id = `ticket-${ticket.key}`
+        card.innerHTML = `
+          <div class="ticket-key">${ticket.key}</div>
+          <div class="ticket-title">${ticket.summary}</div>
+          <span class="ticket-status">${ticket.status}</span>
+        `
+        card.onclick = () => selectTicket(ticket)
+        grid.appendChild(card)
+      })
+      container.appendChild(grid)
+    } catch (e) {
+      container.innerHTML = '<div class="empty">Error connecting to API. Is the server running?</div>'
+    }
+  }
+
+  function selectTicket(ticket) {
+    selectedTicket = ticket
+    document.querySelectorAll('.ticket-card').forEach(c => c.classList.remove('selected'))
+    document.getElementById(`ticket-${ticket.key}`).classList.add('selected')
+    document.getElementById('selectedTicket').innerHTML = `
+      <strong style="color:#58a6ff">${ticket.key}</strong> — ${ticket.summary}
+      <span class="badge badge-blue">selected</span>
+    `
+    document.getElementById('generateBtn').disabled = false
+  }
+
+async function generateRunbook() {
+    if (!selectedTicket) return
+    const projectKey = document.getElementById('projectKey').value.trim()
+    setLoading(true, `Generating runbook for ${selectedTicket.key}...`)
+    try {
+      const res = await fetch(`${API}/generate-and-sync/${projectKey}/${selectedTicket.key}`, { method: 'POST' })
+      const data = await res.json()
+      showRunbook(data)
+      if (data.confluence_url) {
+        document.getElementById('savedPath').innerHTML = `
+          Saved to: ${data.saved_to} &nbsp;|&nbsp;
+          <a href="${data.confluence_url}" target="_blank" style="color:#58a6ff;">
+            View in Confluence ↗
+          </a>
+        `
+      }
+    } catch (e) {
+      setLoading(false, 'Error generating runbook')
+    }
+  }
+  
+  async function generateAll() {
+    const projectKey = document.getElementById('projectKey').value.trim()
+    setLoading(true, 'Generating all incident runbooks... this may take 30-60 seconds')
+    try {
+      const res = await fetch(`${API}/generate-all/${projectKey}`, { method: 'POST' })
+      const data = await res.json()
+      if (data.runbooks && data.runbooks.length > 0) {
+        showRunbook({ ...data.runbooks[0], saved_to: data.saved_files[0] })
+        setLoading(false, `Generated ${data.generated} runbooks and saved to disk`)
+      }
+    } catch (e) {
+      setLoading(false, 'Error generating runbooks')
+    }
+  }
+
+  function showRunbook(data) {
+    currentRunbook = data.runbook
+    document.getElementById('outputCard').style.display = 'block'
+    document.getElementById('runbookTitle').textContent = data.ticket_title || data.runbooks?.[0]?.ticket_title || ''
+    document.getElementById('runbookOutput').textContent = data.runbook
+    document.getElementById('savedPath').textContent = data.saved_to ? `Saved to: ${data.saved_to}` : ''
+    setLoading(false, 'Runbook generated successfully')
+    document.getElementById('outputCard').scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function setLoading(loading, message) {
+    document.getElementById('generateBtn').disabled = loading
+    document.getElementById('statusBar').innerHTML = loading
+      ? `<span class="spinner"></span>${message}`
+      : message
+  }
+
+  function copyRunbook() {
+    navigator.clipboard.writeText(currentRunbook)
+    const btn = document.querySelector('.copy-btn')
+    btn.textContent = 'Copied!'
+    setTimeout(() => btn.textContent = 'Copy', 2000)
+  }
+</script>
+</body>
+</html>
