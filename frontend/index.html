@@ -92,7 +92,7 @@
 </div>
 
 <script>
-  const API = 'http://127.0.0.1:8000'
+  const API = 'http://35.154.77.254:8000'
   let selectedTicket = null
   let currentRunbook = ''
 
@@ -160,7 +160,7 @@ async function generateRunbook() {
       setLoading(false, 'Error generating runbook')
     }
   }
-  
+
   async function generateAll() {
     const projectKey = document.getElementById('projectKey').value.trim()
     setLoading(true, 'Generating all incident runbooks... this may take 30-60 seconds')

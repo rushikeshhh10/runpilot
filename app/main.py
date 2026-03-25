@@ -120,3 +120,48 @@ def generate_and_sync(project_key: str, ticket_key: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/webhook/jira")
+async def jira_webhook(payload: dict):
+    try:
+        event = payload.get("webhookEvent", "")
+        issue = payload.get("issue", {})
+        fields = issue.get("fields", {})
+        status = fields.get("status", {}).get("name", "")
+        issue_key = issue.get("key", "")
+        project_key = issue_key.split("-")[0] if issue_key else ""
+
+        if event == "jira:issue_updated" and status == "Done":
+            print(f"Webhook received for {issue_key} - status: {status}")
+            summary = fields.get("summary", "")
+            desc = fields.get("description", {})
+            description_text = ""
+            if desc and isinstance(desc, dict):
+                for block in desc.get("content", []):
+                    for inline in block.get("content", []):
+                        if inline.get("type") == "text":
+                            description_text += inline.get("text", "")
+            ticket = {
+                "key": issue_key,
+                "summary": summary,
+                "status": status,
+                "description": description_text
+            }
+            runbook = generate_runbook(ticket)
+            filename = f"{RUNBOOKS_DIR}/{issue_key}.md"
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"# Runbook: {ticket['summary']}\n\n")
+                f.write(runbook)
+            confluence_title = f"Runbook: {summary} ({issue_key})"
+            confluence_result = create_confluence_page(confluence_title, runbook)
+            return {
+                "status": "runbook_generated",
+                "ticket_key": issue_key,
+                "confluence_url": confluence_result["url"]
+            }
+
+        return {"status": "ignored", "reason": f"Event {event} with status {status} not actionable"}
+
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return {"status": "error", "detail": str(e)}
