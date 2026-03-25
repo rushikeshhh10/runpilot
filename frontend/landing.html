@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RunPilot — Your runbooks write themselves</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --green: #3fb950;
+      --green-dark: #2ea043;
+      --blue: #58a6ff;
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --bg3: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
+    .nav-logo { font-size: 20px; font-weight: 700; color: var(--text); }
+    .nav-logo span { color: var(--green); }
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { background: var(--green); color: white; padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--green-dark); color: white; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 5rem 2rem 4rem; max-width: 800px; margin: 0 auto; }
+    .hero-badge { display: inline-block; background: #1a4731; color: var(--green); font-size: 12px; font-weight: 600; padding: 4px 14px; border-radius: 20px; margin-bottom: 1.5rem; border: 1px solid #2ea043; }
+    .hero h1 { font-size: 52px; font-weight: 700; line-height: 1.15; margin-bottom: 1.25rem; letter-spacing: -0.5px; }
+    .hero h1 span { color: var(--green); }
+    .hero p { font-size: 18px; color: var(--muted); line-height: 1.7; margin-bottom: 2.5rem; max-width: 560px; margin-left: auto; margin-right: auto; }
+    .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem; }
+    .btn-primary { background: var(--green); color: white; padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; transition: background 0.2s; border: none; cursor: pointer; }
+    .btn-primary:hover { background: var(--green-dark); }
+    .btn-secondary { background: transparent; color: var(--text); padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--muted); background: var(--bg3); }
+    .hero-meta { font-size: 13px; color: var(--muted); }
+    .hero-meta span { color: var(--green); font-weight: 600; }
+
+    /* DEMO VIDEO PLACEHOLDER */
+    .demo-container { max-width: 900px; margin: 0 auto 5rem; padding: 0 2rem; }
+    .demo-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .demo-bar { background: var(--bg3); padding: 12px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+    .demo-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .demo-url { background: var(--bg); border-radius: 6px; padding: 4px 12px; font-size: 12px; color: var(--muted); margin-left: 8px; }
+    .demo-content { padding: 2rem; }
+    .demo-step { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-start; }
+    .demo-num { width: 28px; height: 28px; border-radius: 50%; background: #1a4731; color: var(--green); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .demo-text strong { display: block; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+    .demo-text span { font-size: 13px; color: var(--muted); }
+    .demo-arrow { text-align: center; color: var(--green); font-size: 20px; margin: -0.5rem 0; }
+
+    /* PAIN SECTION */
+    .section { max-width: 1000px; margin: 0 auto 5rem; padding: 0 2rem; }
+    .section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 0.75rem; }
+    .section h2 { font-size: 32px; font-weight: 700; margin-bottom: 1rem; }
+    .section p { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 560px; }
+    .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 2rem; }
+    .pain-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+    .pain-icon { font-size: 24px; margin-bottom: 0.75rem; }
+    .pain-title { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; }
+    .pain-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* HOW IT WORKS */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 2rem; }
+    .step-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; position: relative; }
+    .step-num { font-size: 36px; font-weight: 700; color: var(--border); margin-bottom: 0.75rem; }
+    .step-title { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; }
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 2rem; }
+    .price-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .price-card.featured { border-color: var(--green); }
+    .price-badge { font-size: 11px; font-weight: 600; background: #1a4731; color: var(--green); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 1rem; }
+    .price-name { font-size: 16px; font-weight: 600; margin-bottom: 0.5rem; }
+    .price-amount { font-size: 32px; font-weight: 700; margin-bottom: 0.25rem; }
+    .price-amount span { font-size: 14px; font-weight: 400; color: var(--muted); }
+    .price-desc { font-size: 13px; color: var(--muted); margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .price-feature { font-size: 13px; color: var(--muted); padding: 5px 0; display: flex; gap: 8px; align-items: center; }
+    .price-feature::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+    /* EMAIL SIGNUP */
+    .signup-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 3rem 2rem; text-align: center; max-width: 600px; margin: 0 auto 5rem; }
+    .signup-section h2 { font-size: 28px; font-weight: 700; margin-bottom: 0.75rem; }
+    .signup-section p { color: var(--muted); font-size: 15px; margin-bottom: 2rem; }
+    .signup-form { display: flex; gap: 10px; max-width: 440px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+    .signup-form input { flex: 1; min-width: 220px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; outline: none; }
+    .signup-form input:focus { border-color: var(--green); }
+    .signup-form button { background: var(--green); color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .signup-form button:hover { background: var(--green-dark); }
+    .signup-note { font-size: 12px; color: var(--muted); margin-top: 1rem; }
+    .success-msg { display: none; color: var(--green); font-size: 15px; font-weight: 600; margin-top: 1rem; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 2rem; text-align: center; color: var(--muted); font-size: 13px; }
+    footer span { color: var(--green); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Run<span>Pilot</span></div>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#signup">Early access</a>
+    <a href="app.html" class="nav-cta">Try it free →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">🚀 Now in early access</div>
+  <h1>Your runbooks<br/><span>write themselves</span></h1>
+  <p>RunPilot connects to your Jira, reads your resolved incidents, and automatically generates and updates runbooks in Confluence. Zero manual effort.</p>
+  <div class="hero-buttons">
+    <a href="app.html" class="btn-primary">Try it free →</a>
+    <a href="#signup" class="btn-secondary">Get early access</a>
+  </div>
+  <div class="hero-meta">Used by DevOps teams · <span>No credit card required</span></div>
+</div>
+
+<div class="demo-container">
+  <div class="demo-box">
+    <div class="demo-bar">
+      <div class="demo-dot" style="background:#ff5f57"></div>
+      <div class="demo-dot" style="background:#febc2e"></div>
+      <div class="demo-dot" style="background:#28c840"></div>
+      <div class="demo-url">runpilot.io/app</div>
+    </div>
+    <div class="demo-content">
+      <div class="demo-step">
+        <div class="demo-num">1</div>
+        <div class="demo-text">
+          <strong>Connect your Jira project</strong>
+          <span>Enter your project key — RunPilot fetches all resolved incidents instantly</span>
+        </div>
+      </div>
+      <div class="demo-arrow">↓</div>
+      <div class="demo-step">
+        <div class="demo-num">2</div>
+        <div class="demo-text">
+          <strong>AI generates a structured runbook</strong>
+          <span>Symptoms, root causes, step-by-step resolution, prevention — all in seconds</span>
+        </div>
+      </div>
+      <div class="demo-arrow">↓</div>
+      <div class="demo-step">
+        <div class="demo-num">3</div>
+        <div class="demo-text">
+          <strong>Auto-synced to Confluence</strong>
+          <span>Runbook appears in your Confluence space automatically. No copy-paste needed.</span>
+        </div>
+      </div>
+      <div class="demo-arrow">↓</div>
+      <div class="demo-step">
+        <div class="demo-num">4</div>
+        <div class="demo-text">
+          <strong>Updates itself when new incidents resolve</strong>
+          <span>Every time a Jira ticket closes, RunPilot updates the runbook automatically</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="pain">
+  <div class="section-label">The problem</div>
+  <h2>Runbooks are always outdated.<br/>Nobody has time to fix them.</h2>
+  <p>Every DevOps team knows this pain. You write runbooks once, the infra changes, and nobody updates them. At 2am during an incident — the doc is useless.</p>
+  <div class="pain-grid">
+    <div class="pain-card">
+      <div class="pain-icon">📄</div>
+      <div class="pain-title">Docs go stale instantly</div>
+      <div class="pain-desc">Written once, never updated. By the time you need them, they're wrong.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">⏱️</div>
+      <div class="pain-title">No time to write them</div>
+      <div class="pain-desc">Everyone knows runbooks matter. Nobody has 3 hours to maintain them.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🔁</div>
+      <div class="pain-title">Same incidents repeat</div>
+      <div class="pain-desc">Without documented playbooks, your team re-diagnoses the same issue every 3 months.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🔍</div>
+      <div class="pain-title">Knowledge buried in Slack</div>
+      <div class="pain-desc">The fix lives in a 200-message thread. New engineers have no chance.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="how">
+  <div class="section-label">How it works</div>
+  <h2>Set it up once.<br/>Runbooks update forever.</h2>
+  <p>RunPilot plugs into your existing tools. No new workflow to learn.</p>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-title">Connect Jira + Confluence</div>
+      <div class="step-desc">OAuth in 2 minutes. RunPilot reads your incidents and existing docs.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-title">AI generates runbooks</div>
+      <div class="step-desc">Structured playbooks with symptoms, root causes, and resolution steps.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-title">Synced to Confluence</div>
+      <div class="step-desc">No new tool to learn. Runbooks live where your team already goes.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <div class="step-title">Auto-updates forever</div>
+      <div class="step-desc">Every closed ticket triggers an update. Docs stay fresh automatically.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2>Simple, transparent pricing.</h2>
+  <p>Start free. Upgrade when your team grows.</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-name">Free</div>
+      <div class="price-amount">$0 <span>/month</span></div>
+      <div class="price-desc">Try it out, no card needed</div>
+      <div class="price-feature">5 runbooks</div>
+      <div class="price-feature">Manual generation</div>
+      <div class="price-feature">Jira + Confluence</div>
+    </div>
+    <div class="price-card featured">
+      <div class="price-badge">Most popular</div>
+      <div class="price-name">Starter</div>
+      <div class="price-amount">$49 <span>/month</span></div>
+      <div class="price-desc">Perfect for small teams</div>
+      <div class="price-feature">50 runbooks</div>
+      <div class="price-feature">Auto-updates via webhook</div>
+      <div class="price-feature">Confluence sync</div>
+      <div class="price-feature">Email support</div>
+    </div>
+    <div class="price-card">
+      <div class="price-name">Team</div>
+      <div class="price-amount">$149 <span>/month</span></div>
+      <div class="price-desc">For growing teams</div>
+      <div class="price-feature">Unlimited runbooks</div>
+      <div class="price-feature">Priority AI generation</div>
+      <div class="price-feature">Team collaboration</div>
+      <div class="price-feature">Priority support</div>
+    </div>
+    <div class="price-card">
+      <div class="price-name">Business</div>
+      <div class="price-amount">$299 <span>/month</span></div>
+      <div class="price-desc">For larger engineering orgs</div>
+      <div class="price-feature">Unlimited everything</div>
+      <div class="price-feature">SSO + audit logs</div>
+      <div class="price-feature">SLA guarantee</div>
+      <div class="price-feature">Dedicated support</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="signup" style="max-width:600px;">
+  <div class="signup-section">
+    <h2>Get early access</h2>
+    <p>We're onboarding the first 20 teams personally. Free setup call included. Join the waitlist and we'll reach out within 24 hours.</p>
+    <div class="signup-form">
+      <input type="email" id="emailInput" placeholder="your@email.com" />
+      <button onclick="submitEmail()">Join waitlist →</button>
+    </div>
+    <div class="signup-note">No spam. No credit card. Cancel anytime.</div>
+    <div class="success-msg" id="successMsg">🎉 You're on the list! We'll reach out within 24 hours.</div>
+  </div>
+</div>
+
+<footer>
+  Built by a DevOps engineer, for DevOps engineers · <span>RunPilot</span> © 2026
+</footer>
+
+<script>
+  function submitEmail() {
+    const email = document.getElementById('emailInput').value.trim()
+    if (!email || !email.includes('@')) {
+      alert('Please enter a valid email address')
+      return
+    }
+    document.getElementById('successMsg').style.display = 'block'
+    document.getElementById('emailInput').value = ''
+    console.log('Email submitted:', email)
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault()
+      document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' })
+    })
+  })
+</script>
+</body>
+</html>
