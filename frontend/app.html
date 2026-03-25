@@ -3,202 +3,796 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RunPilot — Auto-generate Runbooks</title>
+  <title>RunPilot — Generate Runbooks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
-    .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 1rem 2rem; display: flex; align-items: center; gap: 12px; }
-    .logo { font-size: 20px; font-weight: 700; color: #58a6ff; }
-    .logo span { color: #3fb950; }
-    .tagline { font-size: 13px; color: #8b949e; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
-    .hero { text-align: center; padding: 3rem 0 2rem; }
-    .hero h1 { font-size: 36px; font-weight: 700; margin-bottom: 0.5rem; }
-    .hero h1 span { color: #3fb950; }
-    .hero p { color: #8b949e; font-size: 16px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; color: #e1e4e8; }
-    .input-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    input { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; color: #e1e4e8; font-size: 14px; flex: 1; min-width: 200px; outline: none; }
-    input:focus { border-color: #58a6ff; }
-    button { background: #238636; border: none; border-radius: 8px; padding: 10px 20px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
-    button:hover { background: #2ea043; }
-    button.secondary { background: #21262d; border: 1px solid #30363d; }
-    button.secondary:hover { background: #30363d; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 1rem; }
-    .ticket-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; cursor: pointer; transition: border-color 0.2s; }
-    .ticket-card:hover { border-color: #58a6ff; }
-    .ticket-card.selected { border-color: #3fb950; background: #0d2317; }
-    .ticket-key { font-size: 12px; color: #58a6ff; font-weight: 600; margin-bottom: 4px; }
-    .ticket-title { font-size: 14px; color: #e1e4e8; line-height: 1.4; margin-bottom: 8px; }
-    .ticket-status { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: #1a4731; color: #3fb950; font-weight: 600; }
-    .runbook-output { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; margin-top: 1rem; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.7; white-space: pre-wrap; max-height: 600px; overflow-y: auto; color: #e1e4e8; }
-    .loading { text-align: center; padding: 2rem; color: #8b949e; }
-    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --green: #00e87a;
+      --green-dim: #00c265;
+      --bg: #080c10;
+      --bg2: #0d1219;
+      --bg3: #121920;
+      --bg4: #161e27;
+      --border: rgba(255,255,255,0.07);
+      --border-green: rgba(0,232,122,0.25);
+      --text: #eef2f7;
+      --muted: #6b7a8d;
+      --muted2: #3d4a57;
+      --red: #ff5f57;
+      --amber: #febc2e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,12,16,0.9);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 16px; }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--green); }
+
+    .nav-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(0,232,122,0.1);
+      color: var(--green);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,232,122,0.2);
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-link {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--text); }
+
+    .status-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .dot-live {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,232,122,0.4);} 50%{opacity:0.8;box-shadow:0 0 0 4px rgba(0,232,122,0);} }
+
+    /* LAYOUT */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: calc(100vh - 57px);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg2);
+    }
+
+    .sidebar-section {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 0.75rem;
+    }
+
+    .project-input-wrap {
+      display: flex;
+      gap: 8px;
+    }
+
+    .project-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: 0.05em;
+    }
+    .project-input:focus { border-color: var(--border-green); }
+    .project-input::placeholder { color: var(--muted2); font-weight: 400; letter-spacing: 0; }
+
+    .fetch-btn {
+      background: var(--green);
+      color: #080c10;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .fetch-btn:hover { background: var(--green-dim); }
+    .fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* TICKETS */
+    .tickets-wrap { flex: 1; overflow-y: auto; padding: 0.75rem; }
+
+    .tickets-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.5rem 0.75rem;
+    }
+    .tickets-count { font-size: 12px; color: var(--muted); }
+    .tickets-filter {
+      font-size: 11px;
+      color: var(--green);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      transition: opacity 0.2s;
+    }
+    .tickets-filter:hover { opacity: 0.7; }
+
+    .ticket-item {
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      position: relative;
+    }
+    .ticket-item:hover {
+      background: var(--bg3);
+      border-color: var(--border);
+    }
+    .ticket-item.selected {
+      background: rgba(0,232,122,0.06);
+      border-color: var(--border-green);
+    }
+    .ticket-item.selected::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--green);
+      border-radius: 2px;
+    }
+
+    .ticket-key {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--green);
+      font-weight: 500;
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+    .ticket-title {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 6px;
+      font-weight: 400;
+    }
+    .ticket-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .status-done { background: rgba(0,232,122,0.1); color: var(--green); }
+    .status-done::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 0.75rem; opacity: 0.5; }
+    .empty-text { font-size: 13px; line-height: 1.6; }
+
+    /* LOADING SKELETON */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+    /* MAIN PANEL */
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    .main-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .selected-ticket-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .selected-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .selected-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .selected-placeholder { font-size: 13px; color: var(--muted2); font-style: italic; }
+
+    .toolbar-actions { display: flex; gap: 8px; align-items: center; }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .action-btn:hover { background: var(--bg3); border-color: rgba(255,255,255,0.12); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .action-btn.primary {
+      background: var(--green);
+      color: #080c10;
+      border-color: transparent;
+      font-weight: 600;
+    }
+    .action-btn.primary:hover { background: var(--green-dim); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,232,122,0.2); }
+    .action-btn.primary:disabled { background: var(--green); opacity: 0.4; transform: none; box-shadow: none; }
+
+    /* OUTPUT AREA */
+    .output-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .output-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 400px;
+      text-align: center;
+      gap: 1rem;
+    }
+    .placeholder-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+    .placeholder-title { font-size: 16px; font-weight: 500; color: var(--text); }
+    .placeholder-sub { font-size: 13px; color: var(--muted); max-width: 300px; line-height: 1.6; }
+
+    /* RUNBOOK DISPLAY */
+    .runbook-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .runbook-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--bg3);
+    }
+
+    .runbook-meta { flex: 1; min-width: 0; }
+    .runbook-ticket-key {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--green);
+      font-weight: 500;
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+    .runbook-title-display {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+      line-height: 1.3;
+    }
+
+    .runbook-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      color: var(--muted);
+    }
+    .icon-btn:hover { background: var(--bg3); border-color: rgba(255,255,255,0.12); color: var(--text); }
+
+    .confluence-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--green);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,232,122,0.2);
+      background: rgba(0,232,122,0.06);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .confluence-link:hover { background: rgba(0,232,122,0.1); border-color: rgba(0,232,122,0.3); }
+
+    .runbook-body {
+      padding: 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.8;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .runbook-body::-webkit-scrollbar { width: 4px; }
+    .runbook-body::-webkit-scrollbar-track { background: transparent; }
+    .runbook-body::-webkit-scrollbar-thumb { background: var(--muted2); border-radius: 2px; }
+
+    .runbook-footer {
+      padding: 0.75rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg3);
+    }
+    .runbook-saved { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .runbook-timestamp { font-size: 11px; color: var(--muted2); }
+
+    /* LOADING STATE */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      gap: 1rem;
+    }
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
-    .badge-blue { background: #1c3a5e; color: #58a6ff; }
-    .empty { color: #8b949e; font-size: 14px; padding: 1rem 0; }
-    .actions-row { display: flex; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
-    .runbook-title { font-size: 15px; font-weight: 600; color: #3fb950; margin-bottom: 0.5rem; }
-    .copy-btn { font-size: 12px; padding: 6px 12px; }
-    .status-bar { font-size: 12px; color: #8b949e; margin-top: 8px; }
+    .loading-text { font-size: 14px; color: var(--muted); }
+    .loading-sub { font-size: 12px; color: var(--muted2); }
+
+    /* STATUS BAR */
+    .status-bar {
+      padding: 0.6rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--bg2);
+      min-height: 36px;
+    }
+    .status-bar.success { color: var(--green); }
+    .status-bar.error { color: #ff6b6b; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg3);
+      border: 1px solid var(--border-green);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s;
+      max-width: 320px;
+    }
+    .toast.show { transform: none; opacity: 1; }
+    .toast-icon { font-size: 16px; flex-shrink: 0; }
+
+    @media (max-width: 768px) {
+      .app-layout { grid-template-columns: 1fr; }
+      .sidebar { max-height: 300px; }
+    }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo">Run<span>Pilot</span></div>
-  <div class="tagline">Auto-generate runbooks from Jira incidents</div>
+<nav>
+  <div class="nav-left">
+    <a href="landing.html" class="nav-logo">Run<span>Pilot</span></a>
+    <span class="nav-badge">Beta</span>
+  </div>
+  <div class="nav-right">
+    <div class="status-dot">
+      <div class="dot-live"></div>
+      <span>API live</span>
+    </div>
+    <a href="landing.html" class="nav-link">← Back to home</a>
+  </div>
+</nav>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Jira project</div>
+      <div class="project-input-wrap">
+        <input type="text" id="projectKey" class="project-input" placeholder="e.g. PROJ" value="PROJ" />
+        <button class="fetch-btn" onclick="loadTickets()" id="fetchBtn">Fetch</button>
+      </div>
+    </div>
+
+    <div class="tickets-wrap" id="ticketsWrap">
+      <div class="empty-state">
+        <div class="empty-icon">🎫</div>
+        <div class="empty-text">Enter your Jira project key<br/>and click Fetch to load tickets</div>
+      </div>
+    </div>
+
+    <div style="padding: 0.75rem; border-top: 1px solid var(--border);">
+      <button class="action-btn" style="width:100%; justify-content:center;" onclick="generateAll()" id="generateAllBtn">
+        ⚡ Generate All Incident Runbooks
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+    <div class="main-toolbar">
+      <div class="selected-ticket-info">
+        <div id="selectedInfo">
+          <span class="selected-placeholder">← Select a ticket to generate its runbook</span>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="action-btn" onclick="copyRunbook()" id="copyBtn" disabled>📋 Copy</button>
+        <button class="action-btn primary" onclick="generateRunbook()" id="generateBtn" disabled>
+          ✨ Generate Runbook
+        </button>
+      </div>
+    </div>
+
+    <div class="output-area" id="outputArea">
+      <div class="output-placeholder" id="placeholder">
+        <div class="placeholder-icon">📖</div>
+        <div class="placeholder-title">No runbook generated yet</div>
+        <div class="placeholder-sub">Select a ticket from the sidebar and click Generate Runbook to get started</div>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <span>Ready</span>
+    </div>
+  </div>
+
 </div>
 
-<div class="container">
-  <div class="hero">
-    <h1>Your runbooks <span>write themselves</span></h1>
-    <p>Connect to Jira, fetch incidents, generate production-ready runbooks instantly</p>
-  </div>
-
-  <div class="card">
-    <h2>1. Load your Jira tickets</h2>
-    <div class="input-row">
-      <input type="text" id="projectKey" placeholder="Jira project key (e.g. PROJ)" value="PROJ" />
-      <button onclick="loadTickets()">Fetch Tickets</button>
-    </div>
-    <div id="ticketsContainer" style="margin-top:1rem;">
-      <div class="empty">Enter your project key and click Fetch Tickets</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>2. Generate Runbook</h2>
-    <div id="selectedTicket" class="empty">Select a ticket above to generate its runbook</div>
-    <div class="actions-row">
-      <button id="generateBtn" onclick="generateRunbook()" disabled>Generate Runbook</button>
-      <button class="secondary" onclick="generateAll()">Generate All Incident Runbooks</button>
-    </div>
-    <div id="statusBar" class="status-bar"></div>
-  </div>
-
-  <div class="card" id="outputCard" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h2>Generated Runbook</h2>
-      <button class="secondary copy-btn" onclick="copyRunbook()">Copy</button>
-    </div>
-    <div id="runbookTitle" class="runbook-title"></div>
-    <div id="runbookOutput" class="runbook-output"></div>
-    <div style="margin-top:0.75rem; font-size:12px; color:#8b949e;" id="savedPath"></div>
-  </div>
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✅</span>
+  <span id="toastMsg">Copied to clipboard!</span>
 </div>
 
 <script>
   const API = 'http://35.154.77.254:8000'
   let selectedTicket = null
   let currentRunbook = ''
+  let currentConfluenceUrl = ''
 
   async function loadTickets() {
-    const key = document.getElementById('projectKey').value.trim()
+    const key = document.getElementById('projectKey').value.trim().toUpperCase()
     if (!key) return
-    const container = document.getElementById('ticketsContainer')
-    container.innerHTML = '<div class="loading"><span class="spinner"></span>Fetching tickets from Jira...</div>'
+
+    const wrap = document.getElementById('ticketsWrap')
+    document.getElementById('fetchBtn').disabled = true
+
+    wrap.innerHTML = `
+      <div style="padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 8px;">
+        ${[1,2,3,4,5].map(() => `
+          <div style="padding: 12px; border-radius: 10px; background: var(--bg3);">
+            <div class="skeleton" style="height:10px; width:60px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:12px; width:100%; margin-bottom:4px;"></div>
+            <div class="skeleton" style="height:12px; width:75%;"></div>
+          </div>
+        `).join('')}
+      </div>
+    `
+
     try {
       const res = await fetch(`${API}/tickets/${key}`)
+      if (!res.ok) throw new Error('Failed')
       const data = await res.json()
+
       if (!data.tickets || data.tickets.length === 0) {
-        container.innerHTML = '<div class="empty">No tickets found for this project</div>'
+        wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No tickets found for project <strong>${key}</strong></div></div>`
         return
       }
-      container.innerHTML = `<div style="font-size:13px;color:#8b949e;margin-bottom:10px;">${data.count} tickets found — click one to select it</div>`
-      const grid = document.createElement('div')
-      grid.className = 'tickets-grid'
+
+      wrap.innerHTML = `
+        <div class="tickets-header">
+          <span class="tickets-count">${data.count} tickets</span>
+        </div>
+      `
+
       data.tickets.forEach(ticket => {
-        const card = document.createElement('div')
-        card.className = 'ticket-card'
-        card.id = `ticket-${ticket.key}`
-        card.innerHTML = `
+        const item = document.createElement('div')
+        item.className = 'ticket-item'
+        item.id = `ticket-${ticket.key}`
+        item.innerHTML = `
           <div class="ticket-key">${ticket.key}</div>
           <div class="ticket-title">${ticket.summary}</div>
-          <span class="ticket-status">${ticket.status}</span>
+          <span class="ticket-status status-done">${ticket.status}</span>
         `
-        card.onclick = () => selectTicket(ticket)
-        grid.appendChild(card)
+        item.onclick = () => selectTicket(ticket)
+        wrap.appendChild(item)
       })
-      container.appendChild(grid)
+
     } catch (e) {
-      container.innerHTML = '<div class="empty">Error connecting to API. Is the server running?</div>'
+      wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Could not connect to API.<br/>Make sure the server is running.</div></div>`
+    } finally {
+      document.getElementById('fetchBtn').disabled = false
     }
   }
 
   function selectTicket(ticket) {
     selectedTicket = ticket
-    document.querySelectorAll('.ticket-card').forEach(c => c.classList.remove('selected'))
-    document.getElementById(`ticket-${ticket.key}`).classList.add('selected')
-    document.getElementById('selectedTicket').innerHTML = `
-      <strong style="color:#58a6ff">${ticket.key}</strong> — ${ticket.summary}
-      <span class="badge badge-blue">selected</span>
+    document.querySelectorAll('.ticket-item').forEach(el => el.classList.remove('selected'))
+    const el = document.getElementById(`ticket-${ticket.key}`)
+    if (el) { el.classList.add('selected'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+    document.getElementById('selectedInfo').innerHTML = `
+      <div class="selected-label">Selected ticket</div>
+      <div class="selected-title">${ticket.key} — ${ticket.summary}</div>
     `
     document.getElementById('generateBtn').disabled = false
+    setStatus('Ticket selected — click Generate Runbook to create its runbook', '')
   }
 
-async function generateRunbook() {
+  async function generateRunbook() {
     if (!selectedTicket) return
-    const projectKey = document.getElementById('projectKey').value.trim()
-    setLoading(true, `Generating runbook for ${selectedTicket.key}...`)
+    const projectKey = document.getElementById('projectKey').value.trim().toUpperCase()
+
+    document.getElementById('generateBtn').disabled = true
+    document.getElementById('copyBtn').disabled = true
+    setStatus('Generating runbook with AI...', '')
+    showLoading(`Generating runbook for ${selectedTicket.key}...`, 'This takes about 10–15 seconds')
+
     try {
       const res = await fetch(`${API}/generate-and-sync/${projectKey}/${selectedTicket.key}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Generation failed')
       const data = await res.json()
+
+      currentRunbook = data.runbook
+      currentConfluenceUrl = data.confluence_url || ''
       showRunbook(data)
-      if (data.confluence_url) {
-        document.getElementById('savedPath').innerHTML = `
-          Saved to: ${data.saved_to} &nbsp;|&nbsp;
-          <a href="${data.confluence_url}" target="_blank" style="color:#58a6ff;">
-            View in Confluence ↗
-          </a>
-        `
-      }
+      setStatus(`✓ Runbook generated and synced to Confluence`, 'success')
+      showToast('✅', 'Runbook generated and saved to Confluence!')
+
     } catch (e) {
-      setLoading(false, 'Error generating runbook')
+      setStatus('Error generating runbook. Please try again.', 'error')
+      showToast('❌', 'Error generating runbook')
+      document.getElementById('outputArea').innerHTML = `
+        <div class="output-placeholder">
+          <div class="placeholder-icon">❌</div>
+          <div class="placeholder-title">Generation failed</div>
+          <div class="placeholder-sub">Could not generate runbook. Check your API connection and try again.</div>
+        </div>
+      `
+    } finally {
+      document.getElementById('generateBtn').disabled = false
     }
   }
 
   async function generateAll() {
-    const projectKey = document.getElementById('projectKey').value.trim()
-    setLoading(true, 'Generating all incident runbooks... this may take 30-60 seconds')
+    const projectKey = document.getElementById('projectKey').value.trim().toUpperCase()
+    if (!projectKey) { showToast('⚠️', 'Please enter a project key first'); return; }
+
+    document.getElementById('generateAllBtn').disabled = true
+    setStatus('Generating all incident runbooks... this may take 30–60 seconds', '')
+    showLoading('Generating all incident runbooks...', 'Fetching tickets, generating with AI, syncing to Confluence')
+
     try {
       const res = await fetch(`${API}/generate-all/${projectKey}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed')
       const data = await res.json()
+
       if (data.runbooks && data.runbooks.length > 0) {
-        showRunbook({ ...data.runbooks[0], saved_to: data.saved_files[0] })
-        setLoading(false, `Generated ${data.generated} runbooks and saved to disk`)
+        currentRunbook = data.runbooks[0].runbook
+        showRunbook({ ...data.runbooks[0], saved_to: data.saved_files?.[0], confluence_url: null })
+        setStatus(`✓ Generated ${data.generated} runbooks successfully`, 'success')
+        showToast('✅', `${data.generated} runbooks generated!`)
       }
     } catch (e) {
-      setLoading(false, 'Error generating runbooks')
+      setStatus('Error generating runbooks', 'error')
+      showToast('❌', 'Error generating runbooks')
+    } finally {
+      document.getElementById('generateAllBtn').disabled = false
     }
   }
 
-  function showRunbook(data) {
-    currentRunbook = data.runbook
-    document.getElementById('outputCard').style.display = 'block'
-    document.getElementById('runbookTitle').textContent = data.ticket_title || data.runbooks?.[0]?.ticket_title || ''
-    document.getElementById('runbookOutput').textContent = data.runbook
-    document.getElementById('savedPath').textContent = data.saved_to ? `Saved to: ${data.saved_to}` : ''
-    setLoading(false, 'Runbook generated successfully')
-    document.getElementById('outputCard').scrollIntoView({ behavior: 'smooth' })
+  function showLoading(text, sub) {
+    document.getElementById('outputArea').innerHTML = `
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">${text}</div>
+        <div class="loading-sub">${sub}</div>
+      </div>
+    `
   }
 
-  function setLoading(loading, message) {
-    document.getElementById('generateBtn').disabled = loading
-    document.getElementById('statusBar').innerHTML = loading
-      ? `<span class="spinner"></span>${message}`
-      : message
+  function showRunbook(data) {
+    const confluenceBtn = data.confluence_url
+      ? `<a href="${data.confluence_url}" target="_blank" class="confluence-link">📄 View in Confluence ↗</a>`
+      : ''
+
+    document.getElementById('outputArea').innerHTML = `
+      <div class="runbook-card">
+        <div class="runbook-card-header">
+          <div class="runbook-meta">
+            <div class="runbook-ticket-key">${data.ticket_key}</div>
+            <div class="runbook-title-display">${data.ticket_title}</div>
+          </div>
+          <div class="runbook-actions">
+            ${confluenceBtn}
+            <div class="icon-btn" onclick="copyRunbook()" title="Copy runbook">📋</div>
+          </div>
+        </div>
+        <div class="runbook-body" id="runbookContent">${escapeHtml(data.runbook)}</div>
+        <div class="runbook-footer">
+          <div class="runbook-saved">${data.saved_to ? `Saved → ${data.saved_to}` : 'Generated successfully'}</div>
+          <div class="runbook-timestamp">${new Date().toLocaleString()}</div>
+        </div>
+      </div>
+    `
+    document.getElementById('copyBtn').disabled = false
+    document.getElementById('outputArea').scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
   }
 
   function copyRunbook() {
-    navigator.clipboard.writeText(currentRunbook)
-    const btn = document.querySelector('.copy-btn')
-    btn.textContent = 'Copied!'
-    setTimeout(() => btn.textContent = 'Copy', 2000)
+    if (!currentRunbook) return
+    navigator.clipboard.writeText(currentRunbook).then(() => {
+      showToast('📋', 'Runbook copied to clipboard!')
+    })
   }
+
+  function setStatus(msg, type) {
+    const bar = document.getElementById('statusBar')
+    bar.className = `status-bar ${type}`
+    bar.innerHTML = `<span>${msg}</span>`
+  }
+
+  function showToast(icon, msg) {
+    const toast = document.getElementById('toast')
+    document.getElementById('toastIcon').textContent = icon
+    document.getElementById('toastMsg').textContent = msg
+    toast.classList.add('show')
+    setTimeout(() => toast.classList.remove('show'), 3500)
+  }
+
+  window.addEventListener('load', () => {
+    loadTickets()
+  })
 </script>
 </body>
 </html>
